@@ -7,6 +7,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.document_loaders import TextLoader
+from langchain_community.chat_models import ChatOllama
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
@@ -49,8 +50,15 @@ RETRIEVER = VDB.as_retriever(search_kwargs={"k": 4})
 
 # ---------- LLM ----------
 def get_llm():
+    if settings.llm_provider == "ollama":
+        kwargs = {}
+        if settings.ollama_base_url:
+            kwargs["base_url"] = settings.ollama_base_url
+        return ChatOllama(model=settings.ollama_model, temperature=0.1, **kwargs)
+    
     if settings.llm_provider == "openai":
         return ChatOpenAI(model=settings.openai_model, temperature=0.1, api_key=settings.openai_api_key)
+    
     raise ValueError("Unsupported LLM provider (set LLM_PROVIDER=openai or add another provider).")
 
 # ---------- Prompt & chain ----------

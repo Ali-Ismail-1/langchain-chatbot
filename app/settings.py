@@ -1,14 +1,20 @@
 import os
-from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-class Settings(BaseSettings):
-    openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
-    llm_provider: str = os.getenv("LLM_PROVIDER", "openai")
-    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-    embeddings_model: str = os.getenv("EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-    chroma_dir: str = os.getenv("CHROMA_DIR", "app/data/chroma")
+class Settings(BaseSettings):
+    # Provider + OpenAI (optional)
+    llm_provider: str = "openai"
+    openai_model: str = "gpt-4o-mini"
+    openai_api_key: str | None = None
+
+    # Ollama
+    ollama_model: str = "llama3:8b"
+    ollama_base_url: str | None = None  # default http://localhost:11434
+
+    # Embeddings & Chroma
+    embeddings_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    chroma_dir: str = "app/data/chroma"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
