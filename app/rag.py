@@ -1,17 +1,20 @@
+# app / rag.py
 from __future__ import annotations
 import os
 from typing import Dict
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.document_loaders import TextLoader
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage, AIMessage
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain.memory import ChatMessageHistory
 
 from app.settings import settings
 
@@ -37,12 +40,12 @@ def build_or_load_vectorstore(doc_dir: str, chroma_dir: str) -> Chroma:
     # Use persisted Chroma
     if splits:
         vectordb.add_documents(splits)
-        vectordb.persist()
     return vectordb
 
 # Initialize once at import
 VDB = build_or_load_vectorstore("app/data/sample_docs", settings.chroma_dir)
 RETRIEVER = VDB.as_retriever(search_kwargs={"k": 4})
+
 
 # ---------- LLM ----------
 def get_llm():
@@ -56,29 +59,15 @@ BASE_PROMPT = ChatPromptTemplate.from_messages([
      "You are a helpful assistant. Use the provided context to answer. "
      "If the answer is not in the context, say you don't know."),
     MessagesPlaceholder("history"),
-    ("human", "Question: {question}\n\nContext:\n{context}")
+    ("human", "Question: {input}\n\nContext:\n{context}")
 ])
 
 def make_rag_chain():
     llm = get_llm()
+    doc_chain = create_stuff_documents_chain(llm, BASE_PROMPT)
+    retrieval_chain = create_retrieval_chain(RETRIEVER, doc_chain)
 
-    def format_docs(docs):
-        return "\n\n".join(f"[{i+1}] {d.page_content}" for i, d in enumerate(docs))
-
-    # RAG: retrieve -> prompt -> LLM
-    def chain_fn(inputs, config):
-        question = inputs["question"]
-        docs = RETRIEVER.invoke(question)
-        ctx = format_docs(docs)
-        prompt = BASE_PROMPT.format(
-            history=config.get("history", []),
-            question=question,
-            context=ctx
-        )
-        return llm.invoke(prompt)
-
-    # Wrap with message history per-session
-    store: Dict[str, ChatMessageHistory] = {}
+    store: dict[str, ChatMessageHistory] = {}
 
     def get_history(session_id: str) -> ChatMessageHistory:
         if session_id not in store:
@@ -86,9 +75,9 @@ def make_rag_chain():
         return store[session_id]
 
     runnable = RunnableWithMessageHistory(
-        runnable=chain_fn,
+        runnable=retrieval_chain,
         get_session_history=get_history,
-        input_messages_key="question",
+        input_messages_key="input",
         history_messages_key="history"
     )
 
@@ -97,8 +86,9 @@ def make_rag_chain():
 RAG = make_rag_chain()
 
 def ask_with_context(session_id: str, question: str) -> str:
-    resp = RAG.invoke({"question": question}, config={"configurable": {"session_id": session_id}})
-    # Normalize return type (AIMessage or str)
-    if isinstance(resp, AIMessage):
-        return resp.content
-    return str(resp)
+    result = RAG.invoke(
+        {"input": question}, 
+        config={"configurable": {"session_id": session_id}},
+    )
+
+    return result.get("answer") or str(result)
