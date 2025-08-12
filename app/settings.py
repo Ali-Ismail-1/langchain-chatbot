@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     embeddings_model: str = os.getenv("EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-    chroma_dir = str = os.getenv("CHROMA_DIR", "app/data/chroma")
+    chroma_dir: str = os.getenv("CHROMA_DIR", "app/data/chroma")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
