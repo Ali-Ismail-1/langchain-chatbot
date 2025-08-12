@@ -65,7 +65,8 @@ def get_llm():
 BASE_PROMPT = ChatPromptTemplate.from_messages([
     ("system",
      "You are a helpful assistant. Use the provided context to answer. "
-     "If the answer is not in the context, say you don't know."),
+     "Use context for factual/company questions; use chat history for user-specific preferences.\n"
+     "If the information is in neither, say you don't know."),
     MessagesPlaceholder("history"),
     ("human", "Question: {input}\n\nContext:\n{context}")
 ])
