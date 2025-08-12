@@ -30,15 +30,14 @@ def build_or_load_vectorstore(doc_dir: str, chroma_dir: str) -> Chroma:
     splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=120)
     splits = splitter.split_documents(docs)
 
+     # New: always create/load the DB first
     embeddings = HuggingFaceEmbeddings(model_name=settings.embeddings_model)
+    vectordb = Chroma(persist_directory=chroma_dir, embedding_function=embeddings)
 
     # Use persisted Chroma
-    vectordb = Chroma.from_documents(
-        documents=splits,
-        embedding=embeddings,
-        persist_directory=settings.chroma_dir
-    )
-    vectordb.persist()
+    if splits:
+        vectordb.add_documents(splits)
+        vectordb.persist()
     return vectordb
 
 # Initialize once at import
