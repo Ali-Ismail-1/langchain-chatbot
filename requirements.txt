@@ -1,0 +1,15 @@
+fastapi==0.112.2
+uvicorn[standard]==0.30.6
+pydantic==2.8.2
+python-dotenv==1.0.1
+
+transformers==4.44.2
+torch==2.4.0
+
+langchain==0.2.14
+langchain-openai==0.1.22
+langchain-community==0.2.12
+langchain-text-splitters==0.2.2
+chromadb==0.5.11
+
+sentence-transformers==3.0.1
