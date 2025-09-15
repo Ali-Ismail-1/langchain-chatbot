@@ -2,6 +2,11 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.log
 
 # C extensions
 *.so
@@ -60,6 +65,10 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+app/data/chroma/
+*.sqlite3
+*.db
+
 
 # Flask stuff:
 instance/
@@ -144,6 +153,14 @@ ENV/
 env.bak/
 venv.bak/
 
+# Environment & config files
+.env
+.env.*
+*.ini
+*.cfg
+*.toml
+settings.json
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -205,3 +222,23 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Mac / OS artifacts
+.DS_Store
+Thumbs.db
+
+# Jupyter / notebooks
+.ipynb_checkpoints
+
+# VSCode / PyCharm
+.vscode/
+.idea/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Uvicorn reload artifacts
+*.pid
